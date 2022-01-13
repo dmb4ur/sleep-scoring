@@ -7,7 +7,7 @@ library(plotly)
 options(shiny.maxRequestSize = 5*1024*1024^2)
 
 # load script
-source('/home/miked/sleep_app/function_first_step.r')
+source('./function_first_step.r')
 
 waiting_screen <- tagList(
   spin_flower(),
@@ -89,7 +89,7 @@ server <- function(input, output, session) {
   })
   
   f_scored <- eventReactive(input$score_button,{
-    R.matlab::readMat('/home/miked/sleep-scoring-master/main/score_sleep/pred/01.mat.mat')
+    R.matlab::readMat('./pred/01.mat.mat')
   })
   
   
@@ -144,8 +144,8 @@ server <- function(input, output, session) {
   )
   
   session$onSessionEnded(function() {
-    system(paste("rm -f",'/home/miked/sleep-scoring-master/main/score_sleep/pred/01.mat.mat'))
-    system(paste("rm -f",'/home/miked/sleep-scoring-master/mat/01.mat'))
+    system(paste("rm -f",'./pred/01.mat.mat'))
+    system(paste("rm -f",'../mat/01.mat'))
   })
 }
 
