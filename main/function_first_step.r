@@ -113,12 +113,10 @@ R.matlab::writeMat(paste0(substr(s_file, 0, nchar(s_file)-4), '1.mat'),
 )
 ######################################################################################
 # copy mat file to sleep-scoring mat folder and execute python script
-file.copy(paste0(substr(s_file, 0, nchar(s_file)-4), '1.mat'), '/home/miked/sleep-scoring-master/mat/', overwrite = TRUE )
-setwd("/home/miked/sleep-scoring-master/main")
+file.copy(paste0(substr(s_file, 0, nchar(s_file)-4), '1.mat'), '../mat/', overwrite = TRUE )
 # load reticulate and exectute scoring python script
 # search python
 reticulate::py_available()
 reticulate::py_config()
 reticulate::py_run_file("predict.py")
-setwd("/home/miked/")
 }
