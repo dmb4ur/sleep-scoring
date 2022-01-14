@@ -18,29 +18,6 @@ Since we can not publish the training data due to privacy reasons we provide onl
 You will need a GPU to train the network, but application of already trained model is possible using  a CPU. 
 
 
-
-### Installing
-
-After you have downloaded the folder with files you would need to download the external files needed to read edf. We used the library written by Brett Shoelson, it is available at https://ch.mathworks.com/matlabcentral/fileexchange/31900-edfread. Put the mat files you get by following the link into edf2mat folder.
-
-You also should install Matlab (we used 2018 version), Python 3, Keras and Tensorflow.
-
-
-## Scoring your data
-
-
-### Data conversion
-
-At the moment you can work only with edf files. First you should convert them to .mat files which can be used by our network. You can use Matlab script raw2mat.m which is located in edf2mat folder.
-
-Before you can convert your data you should open the raw2mat.m  script and set
-following variables:
-1) readPath = './../EEG_data/' % it is the path to the folder with edf files
-2) writePath = '../mat/' % directory with the output data
-3) labels for the EEG, EOG and EMG channels
-
-Then you can run the script.
-
 ### Scoring
 
 After you have converted your data you can either train your own network using script train.py
