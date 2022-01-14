@@ -127,11 +127,9 @@ score <- function(s_file, s_c3a2, s_loc, s_roc, s_emg, i) {
   i(90, text = sprintf("%s%%", 90))
   #-------------------------------------------------------------------------------------------------------------
   # copy mat file to sleep-scoring mat folder and execute python script
-  file.copy(paste0(substr(s_file, 0, nchar(s_file)-4), '1.mat'), '/home/miked/sleep-scoring-master/mat/', overwrite = TRUE )
-  setwd("/home/miked/sleep-scoring-master/main")
+  file.copy(paste0(substr(s_file, 0, nchar(s_file)-4), '1.mat'), '../mat/', overwrite = TRUE )
   # load reticulate and exectute scoring python script
   reticulate::py_config()
   reticulate::py_run_file("predict.py")
-  setwd("/home/miked/")
   i(100, text = sprintf("%s%%", 100))
 }

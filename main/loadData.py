@@ -28,12 +28,12 @@ def load_recording(dir_name, f_name):
 	
 	# add dimensions
 	PEMG =  np.expand_dims( PEMG, 1)	
+	C3A2 =  np.expand_dims( C3A2, 2)
 	C3A2 =  np.expand_dims( C3A2, 3)
-	C3A2 =  np.expand_dims( C3A2, 4)
+	LOC =  np.expand_dims( LOC, 2)
 	LOC =  np.expand_dims( LOC, 3)
-	LOC =  np.expand_dims( LOC, 4)
+	ROC =  np.expand_dims( ROC, 2)
 	ROC =  np.expand_dims( ROC, 3)
-	ROC =  np.expand_dims( ROC, 4)
 	
 	# concatenate ocular channels
 	EOG = np.concatenate( ( LOC, ROC ), axis = 3 )
