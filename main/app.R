@@ -10,7 +10,7 @@ spectra <- vroom::vroom('spectra.txt')
 # stages 
 stages <- vroom::vroom('stages.txt')
 
-# change upload max size
+# change upload max size (here it would be 5GB)
 options(shiny.maxRequestSize = 5*1024*1024^2)
 
 #################### Chat parameters ###########################################
@@ -33,7 +33,7 @@ ui <- dashboardPage(
   dashboardHeader(title='Scoring App'),
   dashboardSidebar(
     sidebarMenu(
-      menuItem("Preview of app output", tabName = "spe_tra", icon = icon("search")),
+      menuItem("Preview of app output", tabName = "spe_tra", icon = icon("eye")),
       menuItem("Autom. sleep scoring", tabName = "upload", icon = icon("brain")),
       menuItem("Chat / Discuss / Report", tabName = "chat-room", icon = icon("comments"))
     )
@@ -41,6 +41,12 @@ ui <- dashboardPage(
   dashboardBody(
     tabItems(
       tabItem("spe_tra",
+              h1('Sleep scoring app'),
+              h4('App to quickly and easily automatically sleep score a raw EDF recording, according to a machine learning algorythm published in 2018', 
+                 a('https://pubmed.ncbi.nlm.nih.gov/30459544/'),'. Head over the tab ', em('Autom. sleep scoring'),', upload your EDF file, 
+                 select 4 main EEG derivations and power spectra + sleep stages will automatically be computed. Results can then be downloaded.',
+                 br(),
+                 'You can give suggestions under the Tab ',em('Chat room:'), br(), strong('Here a preview of a sample output:')),
               box(plotlyOutput("plot_preview"), width = 12)
       ),
       tabItem("upload",
@@ -76,13 +82,12 @@ server <- function(input, output, session) {
     
     fig2 <- plot_ly(stages, x = ~Epoch, name = 'Autom. scored') %>%
       add_ribbons(ymin = ~Stages - 0.5, ymax = ~Stages + 0.5, color =  I("black")) %>%
-      plotly::layout(title='Preview of app output',
-                     yaxis = list(title='Stages',
+      plotly::layout(yaxis = list(title='Stages',
                                   range=c(-1.5,4),
                                   ticktext = list("REM", "Wake", "N1", "N2", "SWS"),
                                   tickvals = list(-1, 0, 1, 2, 3),
                                   tickmode = "array"
-                     ), xaxis = list(title = 'Epoch\nTo score your own recording switch to Tab "Autom. sleep scoring"')
+      ), xaxis = list(title = 'Epoch')
       )
     subplot(fig, fig2 , nrows = 2, titleX = TRUE, titleY = TRUE)
   })
@@ -134,15 +139,16 @@ server <- function(input, output, session) {
   })
   
   att <- Attendant$new("progress-bar", hide_on_max = TRUE) # progress bar
+  file_name <- paste0('file_',round(runif(1, 1, 100)))
   
   observeEvent(input$score_button, {
-    source('./function_first_step.r')   # load function
-    score(input$edf_file1$datapath, input$s_c3a2, input$s_loc, input$s_roc, input$s_emg, att$set)
+    source('/home/user/sleep_app/function_first_step.r')   # load function
+    score(input$edf_file1$datapath, input$s_c3a2, input$s_loc, input$s_roc, input$s_emg, file_name,att$set)
   })
   
   f_scored <- eventReactive(input$score_button,{
     att$done() 
-    R.matlab::readMat('./score_sleep/pred/01.mat.mat')
+    R.matlab::readMat(paste0('/home/user/sleep-scoring-master/main/score_sleep/pred/',file_name, '.mat.mat'))
   })
   
   
@@ -197,8 +203,8 @@ server <- function(input, output, session) {
   )
   
   session$onSessionEnded(function() {
-    system(paste("rm -f",'./score_sleep/pred/01.mat.mat'))
-    system(paste("rm -f",'../mat/01.mat'))
+    system(paste0('rm -f ','/home/user/sleep-scoring-master/main/score_sleep/pred/',file_name, '.mat.mat'))
+    system(paste0('rm -f ','/home/user/sleep-scoring-master/mat/',file_name,'.mat'))
   })
   
   
