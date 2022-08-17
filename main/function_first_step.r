@@ -2,8 +2,8 @@
 library(dplyr); library(foreach); library(bspec); library(reticulate); library(signal)
 
 # define function to pre-process data
-score <- function(s_file, s_c3a2, s_loc, s_roc, s_emg, i) {
-  i(10, text = sprintf("%s%%", 10))
+score <- function(s_file, s_c3a2, s_loc, s_roc, s_emg, r_name, i) {
+  i(10, text = 'Reading header')
   # load header
   rec_header <- edfReader::readEdfHeader(s_file)
   
@@ -17,11 +17,11 @@ score <- function(s_file, s_c3a2, s_loc, s_roc, s_emg, i) {
   # downsampling to 128 Hz. dn is downsampling factor
   dn <- fs %/% 128
   
-  i(20, text = sprintf("%s%%", 20))
+  i(20, text = 'Loading and processing EDF recording')
   # read corresponding EDF file
   eeg_recording <- rec_header %>% edfReader::readEdfSignals()
   
-  i(30, text = sprintf("%s%%", 30))
+  i(30, text = 'Downsampling to 128Hz')
   # Downsampling to frequency close to 128Hz
   eeg_downsampled <- foreach(c=c(s_c3a2, s_loc, s_roc, s_emg), .combine=cbind) %do% decimate(eeg_recording[[c]][['signal']], dn) %>% 
     as_tibble() %>% rename_all(~c(s_c3a2, s_loc, s_roc, s_emg)) %>% mutate_all(round,3)
@@ -42,7 +42,7 @@ score <- function(s_file, s_c3a2, s_loc, s_roc, s_emg, i) {
     t_welch$power
   }
   #-------------------------------------------------------------------------------------------------------------
-  i(40, text = sprintf("%s%%", 40))
+  i(40, text = 'Applying notch filter')
   # apply filters
   eeg_downsampled_filtered <- eeg_downsampled %>% # choose and apply filters
     mutate(across(everything(), notch_f)) # %>% mutate(across(C3_A2:C4_A1, high_passf))
@@ -63,7 +63,7 @@ score <- function(s_file, s_c3a2, s_loc, s_roc, s_emg, i) {
     summarize(across(starts_with('epoch'), unlist))
   
   
-  i(50, text = sprintf("%s%%", 50))
+  i(50, text = 'Computing power spectral density main derivation')
   
   # add frequency column
   t_fs <- welchPSD(ts(c3_a2_wider$epoch_1, frequency = (fs/dn)), windowfun = hannwindow, seglength = windowl)
@@ -75,7 +75,7 @@ score <- function(s_file, s_c3a2, s_loc, s_roc, s_emg, i) {
     tidyr::pivot_longer(!freq, names_to='epoch', values_to = 'power') %>%
     mutate(epoch = readr::parse_number(epoch))
   
-  i(60, text = sprintf("%s%%", 60))
+  i(60, text = 'Processing EMG')
   
   #  compute PEMG 
   emg_wider <- eeg_nested %>%
@@ -83,7 +83,7 @@ score <- function(s_file, s_c3a2, s_loc, s_roc, s_emg, i) {
     tidyr::pivot_wider(names_from = epoch, values_from = all_of(s_emg)) %>%
     summarize(across(starts_with('epoch'), unlist))
   
-  i(70, text = sprintf("%s%%", 70))
+  i(70, text = 'Computing power EMG')
   emg_spectra <- emg_wider %>% summarize(across(starts_with('epoch'), ~pwelch_spectra(., windowl, (fs/dn)))) %>% bind_cols('freq'=t_fs$frequency) %>%
     tidyr::pivot_longer(!freq, names_to='epoch', values_to = 'power') %>%
     mutate(epoch = readr::parse_number(epoch))
@@ -96,10 +96,10 @@ score <- function(s_file, s_c3a2, s_loc, s_roc, s_emg, i) {
     ungroup() %>%
     group_by(epoch) %>%
     summarize(pemg = mean(power))
-  i(80, text = sprintf("%s%%", 80))
+  i(80, text = 'Preparing to pass to python')
   #-------------------------------------------------------------------------------------------------------------
   # save as matfile
-  R.matlab::writeMat(paste0(substr(s_file, 0, nchar(s_file)-4), '1.mat'),
+  R.matlab::writeMat(paste0(r_name,'.mat'),
                      Data = list(windowl=windowl, 
                                  stages = t(rep(0, ncol(c3_a2_wider))),
                                  channel.names = rec_header$sHeaders$label,
@@ -124,12 +124,14 @@ score <- function(s_file, s_c3a2, s_loc, s_roc, s_emg, i) {
                                  maxep = n_epochs
                      )
   )
-  i(90, text = sprintf("%s%%", 90))
+  i(90, text = 'Running automatic scoring algorythm')
   #-------------------------------------------------------------------------------------------------------------
   # copy mat file to sleep-scoring mat folder and execute python script
-  file.copy(paste0(substr(s_file, 0, nchar(s_file)-4), '1.mat'), '../mat/', overwrite = TRUE )
+  file.copy(paste0(r_name,'.mat'), '/home/user/sleep-scoring-master/mat/', overwrite = TRUE )
+  setwd("/home/user/sleep-scoring-master/main")
   # load reticulate and exectute scoring python script
   reticulate::py_config()
   reticulate::py_run_file("predict.py")
-  i(100, text = sprintf("%s%%", 100))
+  setwd("/home/user/")
+  i(100, text = 'Visualizing results')
 }
